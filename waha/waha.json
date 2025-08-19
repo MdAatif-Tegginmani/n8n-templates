@@ -1,0 +1,410 @@
+{
+  "name": "waha",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "8de60c81-f26c-4335-b892-0913412f600c",
+      "name": "WAHA Trigger",
+      "type": "@devlikeapro/n8n-nodes-waha.wahaTrigger",
+      "typeVersion": 202409,
+      "position": [
+        -464,
+        288
+      ],
+      "webhookId": "71251449-2644-4325-8ba7-2a1550a81fb4"
+    },
+    {
+      "parameters": {
+        "content": "## Reply \"pong\" on \"ping\" text",
+        "height": 382.58335299812256,
+        "width": 568.1572184210546,
+        "color": 4
+      },
+      "id": "5e42c24f-5976-46de-94c5-0c8928e00f14",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        64,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "f827f7f8-d40c-4d97-9677-9e62d99c7e7a",
+              "leftValue": "={{ $json.payload.body }}",
+              "rightValue": "ping",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "9dc60cdc-5d7b-44ab-b959-3cec77632855",
+              "leftValue": "={{ $json.payload.body }}",
+              "rightValue": "Ping",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "127e1814-f8f1-4826-bead-b70951cfc8ed",
+      "name": "body=ping",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        112,
+        336
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0342e641-d7ad-469f-9834-2c1e658d9de4",
+      "name": "Do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        416,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "text": "pong",
+        "requestOptions": {}
+      },
+      "id": "1ad97a1e-9e64-4791-927b-469fec90a6fc",
+      "name": "Send \"pong\"",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202409,
+      "position": [
+        416,
+        208
+      ],
+      "credentials": {
+        "wahaApi": {
+          "id": "vCYq86cbAjXM5wbA",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Seen",
+        "participant": "",
+        "requestOptions": {}
+      },
+      "id": "8b7e4a91-3bcf-42c5-b566-1914ca1feca7",
+      "name": "Send Seen",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202409,
+      "position": [
+        112,
+        0
+      ],
+      "credentials": {
+        "wahaApi": {
+          "id": "vCYq86cbAjXM5wbA",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Always Send Seen",
+        "height": 227.5411734823075,
+        "width": 568.1572184210546,
+        "color": 4
+      },
+      "id": "bef9ff00-0d66-46ba-a395-6401bf6a96e8",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Send Image on \"image\" text",
+        "height": 399.4096946499026,
+        "width": 568.1572184210546,
+        "color": 4
+      },
+      "id": "54eea5a4-c85c-4867-a3bd-742b67172f55",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        64,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f827f7f8-d40c-4d97-9677-9e62d99c7e7a",
+              "leftValue": "={{ $json.payload.body }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "9dc60cdc-5d7b-44ab-b959-3cec77632855",
+              "leftValue": "={{ $json.payload.body }}",
+              "rightValue": "Image",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "cf253439-51c5-47b5-890f-e565e46fd7ee",
+      "name": "body=image",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Image",
+        "caption": "Check this",
+        "requestOptions": {}
+      },
+      "id": "576fff8c-7ef1-4192-b51b-905c7e41a0c0",
+      "name": "Send Image",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202409,
+      "position": [
+        432,
+        688
+      ],
+      "credentials": {
+        "wahaApi": {
+          "id": "vCYq86cbAjXM5wbA",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "true",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "242f1ea8-0d3f-491c-a60b-1ac78c82488f",
+                    "leftValue": "true",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "4f550e8f-c7d2-4c22-8fbb-f729816db6b7",
+                    "leftValue": "1",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": true
+        }
+      },
+      "id": "1703c41e-2ddc-43b1-8487-442228c48e16",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.1,
+      "position": [
+        -144,
+        288
+      ],
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "ff779793-44fe-4e67-942c-631c3e6e62d9",
+      "name": "Do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        432,
+        848
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WAHA Trigger": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "body=ping": {
+      "main": [
+        [
+          {
+            "node": "Send \"pong\"",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "body=image": {
+      "main": [
+        [
+          {
+            "node": "Send Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send Seen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "body=ping",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "body=image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3741f19b-c145-437d-9167-14fe5258974b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4a85a342df2290e995ff051cb0a4769f33d78b510f4ad5b021e398f70492a4e"
+  },
+  "id": "xUrU1gEYSaStJ25W",
+  "tags": []
+}
