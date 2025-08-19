@@ -209,3 +209,4 @@ If the node is currently missing a media reference:
 [^1]: waha.json
 
 # n8n-templates
+# n8n-templates
