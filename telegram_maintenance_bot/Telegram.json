@@ -1,0 +1,1014 @@
+{
+  "name": "Telegram bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "*"
+        ],
+        "additionalFields": {
+          "download": false
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        2272,
+        0
+      ],
+      "id": "a6b0f61e-2002-4a54-97b7-c5b8ea331419",
+      "name": "Telegram Trigger",
+      "webhookId": "abf6e835-f7d1-4d96-94b1-267f7c5b084a",
+      "credentials": {
+        "telegramApi": {
+          "id": "Re4f9tR86XXTI8aJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $input.all()[0].json.message;\n\nreturn [{\n  json: {\n    user_id: message.from.id.toString(),\n    user_name: message.from.first_name || message.from.username || 'Unknown',\n    chat_id: message.chat.id.toString(),\n    message_text: message.text || '',\n    message_id: message.message_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        0
+      ],
+      "id": "381941d1-d936-4800-83c4-980ba57f0f15",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3dab5f79-d646-4f41-9dfc-0ccea55c1423",
+              "leftValue": "={{ $json.message_text.toLowerCase() }}\n",
+              "rightValue": "fixed",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "f313cb5e-9269-4cfb-8d34-04978326ffa1",
+              "leftValue": "={{ $json.message_text.toLowerCase() }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "5e7cae00-e319-475f-b411-b29e1604929b",
+              "leftValue": "={{ $json.message_text.toLowerCase() }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2720,
+        0
+      ],
+      "id": "2c3abf20-39d7-40dd-b1e6-b869eb161e64",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message_text }}\n",
+        "options": {
+          "systemMessage": "Parse this task completion message and extract details.\n\nProperty mappings:\n- PP, Pp → Potts Point\n- SH, Flinders, Flinder, Findler → Surry Hills\n- AL, Allen → Allen\n- CEN, Central → Central\n- PY, Pyrmont → Pyrmont\n\nReturn EXACTLY:\n{\n  \"description\": \"task description\",\n  \"property\": \"full property name\",\n  \"cost\": 45.50,\n  \"status\": \"complete\"\n}\n\nIf no cost, set cost to null.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3008,
+        -352
+      ],
+      "id": "257cc1c3-4f0d-4cf5-a427-cf578e19000b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code1: Strip fences, parse AI output, normalize, attach metadata\n\n// 1) Read raw AI output\nlet raw = $json.output;\nif (typeof raw !== 'string') {\n  throw new Error('Code1: Missing or invalid $json.output');\n}\nlet s = raw.trim();\n\n// 2) If it starts with ```\nif (s.startsWith('```')) {\n  const firstNewline = s.indexOf('\\n');\n  if (firstNewline !== -1) {\n    s = s.substring(firstNewline + 1);\n  }\n}\n\n// 3) If it ends with ```\nif (s.endsWith('```')) {\n  const lastNewline = s.lastIndexOf('\\n');\n  if (lastNewline !== -1) {\n    s = s.substring(0, lastNewline);\n  }\n}\n\ns = s.trim();\n\n// 4) Parse the cleaned JSON\nlet ai;\ntry {\n  ai = JSON.parse(s);\n} catch (e) {\n  throw new Error('Code1: Failed to JSON.parse AI output → ' + e.message);\n}\n\n// 5) Validate required fields\nif (!ai.description || !ai.property) {\n  throw new Error('Code1: description or property missing in AI output');\n}\n\n// 6) Normalize values\nconst description = ai.description.toString().trim().toLowerCase();\nconst property    = ai.property   .toString().trim().toLowerCase();\nconst cost        = ai.cost != null ? Number(ai.cost) : null;\n\n// 7) Pull chat metadata from your Telegram Code node\nconst meta = $node['Code'].json;\nif (!meta.chat_id) {\n  throw new Error('Code1: chat_id missing in metadata');\n}\n\n// 8) Return the completion payload\nreturn [{\n  json: {\n    description,\n    property,\n    status:       'complete',\n    cost,\n    user_name:    meta.user_name,\n    user_id:      meta.user_id,\n    chat_id:      meta.chat_id,\n    completed_at: new Date().toISOString(),\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3648,
+        -352
+      ],
+      "id": "5ad54bc4-653b-4049-8f55-3cecd0625cf1",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        -176
+      ],
+      "id": "168a244b-294f-4cc6-a43e-9874ec658308",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "k6T335dByDIOeLbf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message_text }}\n",
+        "options": {
+          "systemMessage": "You are a maintenance task parser. Extract individual maintenance tasks from the message.\n\nProperty mappings:\n- PP, Pp → Potts Point  \n- SH, Flinders, Flinder, Findler → Surry Hills\n- AL, Allen → Allen\n- CEN, Central → Central\n- PY, Pyrmont → Pyrmont\n\nIMPORTANT: Return ONLY valid JSON array format. No markdown, no explanations.\n\n[\n  {\n    \"description\": \"Fix shower head\",\n    \"property\": \"Potts Point\",\n    \"status\": \"pending\"\n  },\n  {\n    \"description\": \"Replace light bulb\",\n    \"property\": \"Potts Point\", \n    \"status\": \"pending\"\n  }\n]\n\nRules:\n- Each line becomes one task\n- Clean descriptions (remove room numbers from description)\n- Use full property names only\n- Skip empty lines\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        3040,
+        256
+      ],
+      "id": "f872e34b-f96c-4ff9-8e9d-6fa178244fe3",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3040,
+        464
+      ],
+      "id": "06a23d25-4891-4898-893a-bce3c7547639",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "5vl2tQR2RFQrsOiO",
+          "name": "new"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3cac8725-400d-41b3-b194-40c3d0093c28",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4576,
+        -464
+      ],
+      "id": "da5c0d22-ccd6-47cf-85f5-eeb8f8ff3fb7",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper: strip markdown code fences without putting backticks in source\nfunction stripFences(text) {\nif (typeof text !== 'string') return '';\nlet s = text.trim();\nconst BT = String.fromCharCode(96); // `\nconst F3 = BT + BT + BT; // ```\nconst F3JSON = F3 + 'json';\n\n// remove opening fence line\nif (s.startsWith(F3JSON) || s.startsWith(F3)) {\nconst nl = s.indexOf('\\n');\nif (nl !== -1) s = s.substring(nl + 1);\n}\n// remove trailing fence line\nif (s.endsWith(F3)) {\nconst lastNl = s.lastIndexOf('\\n');\nif (lastNl !== -1) s = s.substring(0, lastNl);\n}\nreturn s.trim();\n}\n\n// 1) Get source: AI Agent output or pass-through\nlet tasks;\nif (typeof $json.output === 'string' && $json.output.trim()) {\nconst cleaned = stripFences($json.output);\ntry {\ntasks = JSON.parse(cleaned); // expect array or object\n} catch {\n// treat as plain text if not valid JSON\ntasks = cleaned;\n}\n} else {\ntasks = $json;\n}\n\n// 2) Convert to array of task objects\nif (typeof tasks === 'string') {\n// split by lines and try \"Property - Description\" heuristic\ntasks = tasks\n.split(/\\r?\\n/)\n.map(l => l.trim())\n.filter(Boolean)\n.map(line => {\nlet property = '';\nlet description = line;\nif (line.includes('-')) {\nconst parts = line.split('-');\nproperty = parts.trim();\ndescription = parts.slice(1).join('-').trim();\n}\nreturn { description, property, status: 'pending' };\n});\n} else if (!Array.isArray(tasks)) {\n// unwrap { tasks: [...] } if present\nif (tasks && Array.isArray(tasks.tasks)) tasks = tasks.tasks;\nelse tasks = [tasks];\n}\n\n// 3) Normalize + attach user meta\nconst meta = $node['Code']?.json || {};\nconst norm = s => String(s || '').trim().replace(/\\s+/g, ' ').toLowerCase();\n\nconst items = tasks\n.map(t => ({\ndescription: norm(t.description),\nproperty: norm(t.property),\nstatus: (t.status || 'pending').toLowerCase(),\n}))\n// require both fields for DB/duplicate check\n.filter(t => t.description && t.property)\n.map(t => ({\njson: {\n...t,\nuser_name: meta.user_name,\nuser_id: meta.user_id,\nchat_id: meta.chat_id,\ncost: null,\ncreated_at: new Date().toISOString(),\n},\n}));\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3408,
+        256
+      ],
+      "id": "1f00d744-db28-414c-8884-86e6de1a48ea",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b93240a-3ba9-4c56-9457-b2f6042a1f46",
+              "leftValue": "={{ $json.found_duplicates }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4896,
+        320
+      ],
+      "id": "89eb4b07-35fd-4e63-b640-c03d752b7805",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "tableId": "maintenance_tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "description",
+              "fieldValue": "={{$json.task.description}}\n"
+            },
+            {
+              "fieldId": "property",
+              "fieldValue": "={{$json.task.property}}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.task.status }}"
+            },
+            {
+              "fieldId": "cost",
+              "fieldValue": "={{ $json.task.cost }}"
+            },
+            {
+              "fieldId": "user_name",
+              "fieldValue": "={{ $json.task.user_name }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.task.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5120,
+        416
+      ],
+      "id": "f8ade1ac-da14-4bc0-a58c-ec019069653e",
+      "name": "Create a row1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "zPt7pKpEYsgGgfHv",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    chat_id: $json.chat_id,\n    text: `✅ Task added: \"${$json.description}\" at ${$json.property}`\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        416
+      ],
+      "id": "8ef92c84-a40d-4a25-86aa-70d6ff26fd8f",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const t = $json.task || {};\nreturn [{\n  json: {\n    chat_id: t.chat_id,\n    text: `⚠️ Similar task already exists: \"${t.description}\" at ${t.property}`\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5120,
+        16
+      ],
+      "id": "c344d786-a101-458f-b4b7-24dbd5c5ebb6",
+      "name": "Code4",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        5344,
+        16
+      ],
+      "id": "a3aa6659-14b1-49a3-a7ae-ac8f8dfd323a",
+      "name": "Send a text message1",
+      "webhookId": "c23c742f-386c-411a-b529-f22b01a32ffd",
+      "credentials": {
+        "telegramApi": {
+          "id": "Re4f9tR86XXTI8aJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        5824,
+        400
+      ],
+      "id": "dfbe6f91-e33c-4e37-9675-2dcfbbdf0a64",
+      "name": "Send a text message",
+      "webhookId": "a37509cd-3aa4-4588-92b8-6521744a26cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "Re4f9tR86XXTI8aJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "maintenance_tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "description",
+              "condition": "ilike",
+              "keyValue": "=%{{ $json.description }}%"
+            },
+            {
+              "keyName": "property",
+              "condition": "ilike",
+              "keyValue": "={{ $json.property }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3936,
+        -464
+      ],
+      "id": "fe4e1fd5-85cf-4443-88bf-8aaa0b61c40f",
+      "name": "Get many rows",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "zPt7pKpEYsgGgfHv",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "maintenance_tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "complete"
+            },
+            {
+              "fieldId": "cost",
+              "fieldValue": "={{ $('Code1').first().json.cost }}"
+            },
+            {
+              "fieldId": "completed_at",
+              "fieldValue": "={{ $('Code1').first().json.completed_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5232,
+        -512
+      ],
+      "id": "bd50718e-b310-48c7-b962-44985ef3d9c4",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "zPt7pKpEYsgGgfHv",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "maintenance_tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $('Code1').item.json.description }}"
+            },
+            {
+              "fieldId": "property",
+              "fieldValue": "={{ $('Code1').item.json.property }}"
+            },
+            {
+              "fieldId": "completed_at",
+              "fieldValue": "={{ $('Code1').item.json.completed_at }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('Code1').item.json.status }}"
+            },
+            {
+              "fieldId": "cost",
+              "fieldValue": "={{ $('Code1').item.json.cost }}"
+            },
+            {
+              "fieldId": "user_name",
+              "fieldValue": "={{ $('Code1').item.json.user_name }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Code1').item.json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5152,
+        -272
+      ],
+      "id": "f3039c18-df36-46f2-b0dd-ed6bd1dba1f5",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "zPt7pKpEYsgGgfHv",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const c1 = $json; // now $json is the Code1 iteration\nconst costText = typeof c1.cost === 'number' ? `$${c1.cost.toFixed(2)}` : 'N/A';\nreturn [{\n  json: {\n    chat_id: $('Code1').first().json.chat_id,\n    text: `✅ Task completed: \"${c1.description}\" at ${c1.property} – Cost: ${costText}`\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5536,
+        -384
+      ],
+      "id": "e76837cc-c768-4ce3-a68c-f3da77605c94",
+      "name": "Code5"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{$json.text}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        5744,
+        -384
+      ],
+      "id": "9a40ff5f-b3c0-441a-8492-76eb65f79789",
+      "name": "Send a text message2",
+      "webhookId": "4a9a4b9d-ab63-4a51-bb91-f008999d521d",
+      "credentials": {
+        "telegramApi": {
+          "id": "Re4f9tR86XXTI8aJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Take all items that actually arrived to this Code node on this path\nconst matches = $input.all() || [];\n\n// Filter out placeholder empty objects from \"Always Output Data\"\nconst realMatches = matches.filter(i => i && i.json && Object.keys(i.json).length > 0);\n\n// Read original_task only from the current item (must be attached upstream)\nconst task =  $('Debug').first().json.original_task ?? null;\n\nreturn [{\n  json: {\n    found_duplicates: realMatches.length > 0,\n    duplicates: realMatches.map(i => i.json),\n    task\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4672,
+        320
+      ],
+      "id": "ff83d6b6-0bb1-456d-8d9d-ca92fdaaa938",
+      "name": "Code6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge Supabase result with the original payload that entered the Supabase node\nconst dbResult = $json;                            // what the Supabase node returned\nconst upstream  =  $('Code6').first().json.task;              // the paired input that went into Supabase\n// If you know the exact upstream node name, prefer it:\n// const upstream = $items('Code6').item.json;     // example for your flow\n\nreturn [{\n  json: {\n    ...dbResult,\n    ...upstream,          // carries chat_id, task, etc.\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5328,
+        416
+      ],
+      "id": "36af94c5-cd19-492b-a762-7a6399210e7e",
+      "name": "Code9"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3584,
+        256
+      ],
+      "id": "5e074d92-58db-47e1-92db-d335925ca0a5",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    description: ($json.description || $json.original_task?.description || '')\n                   .trim()\n                   .toLowerCase(),\n    property: ($json.property || $json.original_task?.property || '')\n                   .trim()\n                   .toLowerCase(),\n    status: ($json.status || $json.original_task?.status || '')\n                   .trim()\n                   .toLowerCase(),\n    original_task: $json.original_task || $json\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3872,
+        320
+      ],
+      "id": "1a750d35-e51a-40c7-a269-b22b409ff1f5",
+      "name": "Code10"
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('DB filter:', $json.description, $json.property, $json.status);\nreturn [$json];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        320
+      ],
+      "id": "ed66c851-3337-4d3f-8293-ccf4437a355d",
+      "name": "Debug"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "maintenance_tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "description",
+              "condition": "ilike",
+              "keyValue": "=%{{$json.description}}%"
+            },
+            {
+              "keyName": "property",
+              "condition": "ilike",
+              "keyValue": "={{$json.property}}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4384,
+        320
+      ],
+      "id": "5e2fb934-f393-49da-ad87-1dd45f4d2fd3",
+      "name": "Get many rows1",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "executeOnce": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "zPt7pKpEYsgGgfHv",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Take the first matched pending row from Supabase output\nconst first = $items()[0].json;\nreturn [{\n  json: {\n    id: first.id\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5008,
+        -512
+      ],
+      "id": "e4ce0d41-a88e-4ce4-a307-a97a32214d8e",
+      "name": "Code12"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Code12",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Code9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code5": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code6": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code9": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code10": {
+      "main": [
+        [
+          {
+            "node": "Debug",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug": {
+      "main": [
+        [
+          {
+            "node": "Get many rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows1": {
+      "main": [
+        [
+          {
+            "node": "Code6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code12": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1bc5e1b4-94c0-4b9c-a27d-a522de287ed3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4a85a342df2290e995ff051cb0a4769f33d78b510f4ad5b021e398f70492a4e"
+  },
+  "id": "IYFV6UoVVKRn6wxg",
+  "tags": []
+}
